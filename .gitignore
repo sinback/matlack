@@ -16,3 +16,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 matlack/renders/_scratch/
+
+# Source facsimile (~82 MB) is hosted as a GitHub Release asset, not in git.
+# Fetch it with ./scripts/fetch_facsimile.sh
+Declaration_of_Independence/facscimile_high_res.jpg
+Declaration_of_Independence/*.part

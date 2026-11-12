@@ -1,25 +1,28 @@
-# Dossier
+# Matlack
 
-This project started as a browser-based tool for tracking characters, factions, and locations — useful for worldbuilding, game development ideation, and tabletop RPG play.
+A WIP text-rendering and font-generation tool inspired by Timothy Matlack's penmanship on the Declaration of Independence.
 
-It became a WIP text-rendering and font-generation tool inspired by Thomas Matlack's penmanship on the Decllaration of Independence.
+This project was split out of [sinback/dossier](https://github.com/sinback/dossier) (a browser-based TTRPG worldbuilding tool), with its full history. The Dossier app itself isn't in this repo anymore; `docs/dossier-commit-map.txt` maps old dossier commit hashes to this repo's hashes.
 
-## Features (main project — not the current focus)
-
-- Three entry types: People, Factions, Locations
-- Tag system (role, faction, mood, trait, location, relationship) for organizing entries
-- Per-entry notes and a quick-thought journal
-- Imaginative mode: generates context-aware prompts from an entry's tags to spark ideas
-- Export to JSON for backups
-- All data persists in localStorage
-
-## Features (experimental — not the current focus)
-- Paper physics and handwriting kinematics simulation
-
-## Features (the current focus)
+## Features
 - Tools for analyzing penmanship and synthesizing letters evocative of them
 - Tools for easing human-in-the-loop tweaks ("reviews") for synthesized letters
 - Early-stage font generation scripts, using the synthesized letters as starting points
+- (Vestigial) paper physics and handwriting kinematics simulation
+
+## Getting the source facsimile (required for research work)
+
+The Matlack reference crops come from a ~82 MB public-domain NARA scan of the
+1823 Stone facsimile. It's too big for git, so download it once after cloning:
+
+```bash
+./scripts/fetch_facsimile.sh
+```
+
+This downloads it to `Declaration_of_Independence/facscimile_high_res.jpg`
+and checks its SHA-256. Provenance and analysis gotchas (Pillow needs
+`Image.MAX_IMAGE_PIXELS = None`) are in
+[`Declaration_of_Independence/README.md`](Declaration_of_Independence/README.md).
 
 ## Human-authored reference materials
 - handwriting_manuals/ are detailed instructions written for humans on how to write (either in general, modern-day script, or in Copperplate, which is Matlack's hand and hte main area of focus currently). Don't read these unless you're told — they take a lot more effort than the user has credits for for you to just peruse them willy-nilly. They can tell you specific pages to focus on if it's ever relevant.
@@ -35,7 +38,7 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000` to play with the paper physics sim tools (not our focus), or `http://localhost:3000/matlack` if you're developing letter synthesis (our focus).
+Then open `http://localhost:3000/matlack` if you're developing letter synthesis (our focus). `http://localhost:3000/` lists every page, including the vestigial paper physics sim tools at `/paper`, `/crinkly` and `/inky`.
 
 ### Review grid (human-in-the-loop tool, not our focus)
 

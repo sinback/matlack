@@ -5,28 +5,6 @@ import path from 'path'
 import { spawn } from 'child_process'
 import { DrawCommand } from './src/api/schema.js'
 
-const syncPlugin = {
-  name: 'dossier-sync',
-  configureServer(server) {
-    server.middlewares.use('/api/sync', (req, res) => {
-      if (req.method !== 'POST') { res.writeHead(405); res.end(); return; }
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        try {
-          const formatted = JSON.stringify(JSON.parse(body), null, 2);
-          fs.writeFileSync(path.resolve(__dirname, 'dossier-state.json'), formatted);
-          res.writeHead(200);
-          res.end('ok');
-        } catch {
-          res.writeHead(500);
-          res.end('error');
-        }
-      });
-    });
-  },
-};
-
 // In-memory list of active SSE response objects.
 // Each connected PaperCanvasPanel holds one open connection here.
 let sseClients = [];
@@ -439,7 +417,7 @@ const anchorsPlugin = {
 };
 
 export default defineConfig({
-  plugins: [react(), syncPlugin, drawPlugin, telemetryPlugin, outlinePlugin, renderPlugin, reviewPlugin, openInGimpPlugin, contextsPlugin, anchorsPlugin, joinDataPlugin],
+  plugins: [react(), drawPlugin, telemetryPlugin, outlinePlugin, renderPlugin, reviewPlugin, openInGimpPlugin, contextsPlugin, anchorsPlugin, joinDataPlugin],
   server: {
     port: 3000,
     open: true,

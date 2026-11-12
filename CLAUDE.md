@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Before you do anything else:
 - Note that you are Claude Fable 5. You're not like the other Claude agents that have worked on this project in the past. This CLAUDE.md was specifically updated for you, but there might still be parts of it written with more human-in-the-loop ideas in mind. You're supposed to work smarter and consult the user less than previous agents. The user has pretty limited usage limitations with you, though, so you can ask for clarification if you find you're getting really deep in the weeds. We want to avoid you being in the middle of an important thought stream when the usage limits run out, because that would be counterproductive.
 - Read the README.md, which has been updated with your needs in mind as well as standard README fare like usage instructions.
-- Always remember that right now we're focusing on the Matlack project (we're on git branch feat/matlack), which has cost at least 20x the development effort of the rest of the project (which is just a vibe-coded TTRPG tool). The project includes the non-matlack vibe-coded stuff because it's been convenient to not remove it, not because we're working actively on it right now.
+- This repo is the Matlack project. It was split out of sinback/dossier (a vibe-coded TTRPG tool) with full history; the Dossier app itself was removed from `main`, but its early commits remain in history. `docs/dossier-commit-map.txt` maps old dossier commit hashes (cited in docs, render filenames, etc.) to this repo's hashes. The paper-physics sim (`/paper`, `/crinkly`, `/inky`, `snap.sh`) is vestigial and may be removed from `main` later; it isn't part of the current workflow.
 
 ## Commands
 
@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run preview` — serve the built `dist/`
 
 Routes (all under the dev server):
-- `/` — main Dossier app
+- `/` — index page linking to the routes below
+- `/paper` — paper/ink canvas (`PaperCanvasPanel`); the target `snap.sh` draws on
 - `/matlack` — letter-synthesis canvas (Matlack handwriting R&D)
 - `/review?letter=<a|b|f>` — 3×3 candidate review grid; saves JSON to `reviews/`
 - `/crinkly`, `/inky` — paper-physics demos
@@ -39,7 +40,6 @@ Routes (all under the dev server):
 - `GET /api/outlines?letter=<x>&overrides=<json>` — component outlines for geometric analysis (Shapely, etc.)
 - `GET /api/render?letter=<x>&format=json` — clean browser-free glyph render; backs `matlack/tools/render_glyph.py`
 - `POST /api/review` — saves review-grid JSON (gitignored `reviews/`)
-- `POST /api/sync` — overwrites `dossier-state.json`
 - `GET/POST /api/anchors`, `GET /api/contexts` — anchor-labeling for reference-scan tracing
 - `POST /api/open` — open a project-relative file in GIMP
 - `GET/POST/DELETE /api/telemetry` — stroke-telemetry inspection
@@ -49,16 +49,9 @@ Routes (all under the dev server):
 
 ## Architecture
 
-Dossier has **two largely independent subsystems** sharing a Vite dev server:
+This repo has **two largely independent subsystems** sharing a Vite dev server: the Matlack glyph renderer (the focus) and a vestigial paper/ink simulation.
 
-### 1. Dossier entry tracker (`src/Dossier.jsx`, `src/prompts/`) (not the current focus)
-- Single-page React app. People / Factions / Locations entries with a tag system (role, faction, mood, trait, location, relationship).
-- Prompt generation: each tag maps to a template in `TAG_PROMPTS` (keyed by `tag` or `tag:type`), plus `UNIVERSAL_PROMPTS[type]`. See `src/prompts/promptBank.js`.
-- State persists in `localStorage`. `SEED_DATA` seeds a fresh localStorage — **clear localStorage to pick up seed changes**.
-- Developer vs. player "mode": same prompt pools, different restrictions. Players have a prompt budget per **sitting** (not "session").
-- `sync_to_obsidian.py` (repo root) appends `dossier-state.json` entries to the user's Obsidian vault — narrative-side tooling, not Matlack.
-
-### 2. Matlack handwriting R&D (`src/styles/`, `matlack/`) (the current focus)
+### Matlack handwriting R&D (`src/styles/`, `matlack/`)
 Two rendering systems that can be composited:
 - **Paper canvas** (`InteractivePaperCanvas.jsx` + `inkText.js`): WebGL2 ink simulation. `inkText.js` plans trajectories (natural cubic spline → 2/3 power law velocity → min-jerk endpoint taper → 10 Hz tremor → nib-angle stamps). `InteractivePaperCanvas` runs the ping-pong ink/wetness simulation on the GPU. See `src/styles/README.md` for the full motor-neuroscience/ink-physics writeup.
 - **Matlack WebGL glyph renderer** (`MatlackCanvas.jsx`, `MatlackRenderer.jsx`, `matlackGlyphs.js`): per-letter component geometry (fatBar, hairline, downstroke, bowls) with override offsets. Used by `/matlack` and the `/review` grid.
@@ -69,26 +62,11 @@ Two rendering systems that can be composited:
 `src/App.jsx` uses `react-router-dom` v7 — add a `<Route>` there when introducing a new demo page.
 
 ### Data flow for `snap.sh` → canvas
-`snap.sh` POSTs JSON to `/api/draw`; the Vite `drawPlugin` validates via Zod (`src/api/schema.js` `DrawCommand`), then broadcasts over SSE to every connected `PaperCanvasPanel`. So `snap.sh` will silently no-op if no `/` page is open in the browser.
+`snap.sh` POSTs JSON to `/api/draw`; the Vite `drawPlugin` validates via Zod (`src/api/schema.js` `DrawCommand`), then broadcasts over SSE to every connected `PaperCanvasPanel`. So `snap.sh` will silently no-op if no `/paper` page is open in the browser.
 
 Known issue (see `TODO.txt`): the DELETE `/api/draw` clear sometimes leaves a faint white "shadow" on the paper; a browser refresh truly clears it. Don't mistake the shadow for freshly drawn ink when reading `for_claude.png`.
 
 ## Project Rules
-
-### Memory access
-- **Don't proactively read** `reference_narrative_ledger.md` or `project_game_world.md` — they're not the current focus of the project.
-
-### What is Dossier? (& terminology) (not currently relevant)
-- Dossier is a noir TTRPG/video game RPG tool for tracking design or interpretation of People, Factions, and Locations. You can review it since its webserver backbone and some React components are tied in to the Matlack research you're actually focusing on, but you shouldn't think about it too hard. Here's a summary:
-- Dossier's Imaginative Mode prompts the app's users with suggestions informed by a system of tags.
-- Dossier has a "developer" mode (used by the user you work with) for taking notes which tend to be for ideation about People, Factions, and Locations.
-- Dossier has a "player" mode (used by the user you work with and future playerbase) for suggesting moods about People, Factions, and Locations.
-- To support the subtle differences in use cases for developer and player mode, developers and players draw from the same prompt pools, but with different restrictions.
-- Players have a prompt budget per Dossier usage "sitting". (Not "session".)
-
-### Past technical goals (irrelevant, but some vestigial aspects remain in the codebase)
-- Prompting: improve the mood, atmosphere, and utility of Imaginative Mode's prompts as the user develops narrative and worldbuilding foundations.
-- Stylistic: develop realistic and appealing animation styles for rendering text and basic shapes ("eye-candy")
 
 ### Current technical goals
 To proceed with this, you need to improve your ability to do this process without a human in the loop. Here are your IMPORTANT and high-level goals:
@@ -113,9 +91,10 @@ If you're working on handwriting or styling, you can do ./snap.sh clear → ./sn
   ./snap.sh file payload.json        # send arbitrary draw command JSON
 ```
 
-If you don't see Firefox in the snapshot, pause and ask the user to switch the Firefox tab back to Dossier.
+If you don't see Firefox in the snapshot, pause and ask the user to switch the Firefox tab back to `/paper`.
 
 ### Reference materials & research (mirrors README rules)
+- `Declaration_of_Independence/facscimile_high_res.jpg` — the full NARA scan every crop in `matlack/reference/` came from. **Not in git** (~82 MB): run `./scripts/fetch_facsimile.sh`. Read `Declaration_of_Independence/README.md` before opening it (Pillow needs `Image.MAX_IMAGE_PIXELS = None`; ~690 MB decoded).
 - `handwriting_manuals/` — human-oriented instruction books (general penmanship, modern script, Copperplate — Matlack's hand). **Don't read these unless told**; they're expensive to peruse. The user can point you at specific pages when relevant.
 - `papers/` — handwriting-kinematics papers. You **are** allowed to read these.
 - Web research on handwriting (shapes, aesthetics, kinematics) is fine, but don't rely on HTML summaries — wget the PDF versions yourself, or ask the user to help download them if that fails.
